@@ -5,29 +5,55 @@
     padding-right: 10%;
   }
 
-  .chart-title {
-    text-align: center;
-    font-family: monospace;
+  .chart-container {
+    font-family: "Arial Narrow", Arial, sans-serif;
+  }
+
+  .chart-container .title {
+    font-size: 2.2em;
+  }
+
+  .axis {
+    font-size: 1.25em;
+  }
+
+  .y.axis.cdd text {
+    /* red */
+    fill: #E4191C;
+  }
+
+  .y.axis.hdd text {
+    /* darker blue */
+    fill: #1E78B4;
+  }
+
+  .axis .tick line {
+    /* light gray */
+    color: #C1C1C1;
   }
 
   .axis-label {
     text-align: center;
-    font: normal 1.4em monospace;
+    font-size: 1.5em;
   }
 
   .cdd-label {
-    stroke: red;
+    /* red */
+    fill: #E4191C;
   }
 
   .hdd-label { 
-    stroke: blue;
+    /* darker blue */
+    fill: #1E78B4;
+  }
+
+  .legend.label {
+    font-size: 1.5em;
   }
 
 </style>
 
-
-<h2 class="chart-title">Annual Heating and Cooling Degree Days in the Contiguous United States</h4>
-<svg class="chart"></svg>
+<svg class="chart-container"></svg>
 
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script src="data.js"></script>
