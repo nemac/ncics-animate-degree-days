@@ -59,7 +59,6 @@ let chartContainer = d3.selectAll(".chart-container")
     .attr("width", chartWidth + margin.left + margin.right)
     .attr("height", chartHeight + margin.top + margin.bottom)
 
-
 let main = () => {
   let chart = appendChart(chartContainer);
 
