@@ -95,6 +95,9 @@ let main = () => {
   let animateRectTransition = animateAnimatingRect(animatingRect, 2000);
   let newAnimateRectTransition;
 
+  let cddAxisSvg = appendAxisYCdd(chart);
+  cddAxisSvg.call(yAxisCdd.ticks(0));
+
   animateRectTransition.end().then(function(d, i) {
 
     setTimeout(() => {
@@ -110,13 +113,15 @@ let main = () => {
       startYearLine.raise()
 
       animatingRect.remove()
+      
+      cddAxisSvg.call(yAxisCdd.ticks(8));
 
       // Add other axis
       let cddAxisLabel = appendChartLabelCdd(chartContainer);
-      let cddAxisSvg = appendAxisYCdd(chart);
 
       // Hide the existing axis
-      hideElements([hddAxisSvg, hddAxisLabel, hddPath, hddLegend]);
+      hddAxisSvg.call(yAxisCdd.ticks(0))
+      hideElements([hddAxisLabel, hddPath, hddLegend]);
       unhideElements([cddLegend]);
 
       // Setup another animation rect
@@ -131,7 +136,10 @@ let main = () => {
           coverRect.lower()
           unhideElements([hddLegend, hddAxisSvg, hddAxisLabel, hddPath])
           chartNote.selectAll("text").text("")
-          hideElements([startYearLine])
+          // Reset the axis ticks
+          cddAxisSvg.call(yAxisCdd.ticks(8))
+          hddAxisSvg.call(yAxisHdd.ticks(5))
+          //hideElements([startYearLine])
         }, 2000);
       })
     }, 2000);
