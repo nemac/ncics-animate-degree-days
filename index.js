@@ -7,6 +7,8 @@ let lineStrokeWidth = "2.5";
 let cicsRed = "#E4191C";
 let cicsBlue = "#1E78B4";
 
+let startAnimationYear = 1980
+
 data = data.map(d => {
   return {
     year: d.year,
@@ -25,13 +27,6 @@ let margin = { top: 120, right: 100, bottom: 60, left: 100 },
 let x = d3.scaleLinear()
     .domain([ 1895, 2018 ])
     .range([0, chartWidth])
-
-// Min/max values across heating and cooling degree days
-let cddMax = d3.max(data, d => +d.sum_cdd)
-let cddMin = d3.min(data, d => +d.sum_cdd)
-
-let hddMax = d3.max(data, d => +d.sum_hdd)
-let hddMin = d3.min(data, d => +d.sum_hdd)
 
 let y_cdd = d3.scaleLinear()
     .domain([0, 1600])
@@ -64,133 +59,326 @@ let chartContainer = d3.selectAll(".chart-container")
     .attr("width", chartWidth + margin.left + margin.right)
     .attr("height", chartHeight + margin.top + margin.bottom)
 
-// Chart title
-chartTitle = chartContainer.append("g")
-  .attr("class", "title")
-  .attr("transform", `translate(${chartWidth/2 - margin.left - 55}, 25)`)
-  .append("text")
 
-chartTitle.append("tspan")
-  .text("Annual Heating and Cooling Degree Days")
-  .attr("x", "0")
+let main = () => {
+  let chartNote = appendChartNote(chartContainer, "Warmer winters led to a reduction in heating demand since 1980.")
+  let chart = appendChart(chartContainer);
 
-chartTitle.append("tspan")
-  .attr("y", "45")
-  .attr("x", "60")
-  .text("in the Contiguous United States")
+  let hddAxisLabel = appendChartLabelHdd(chartContainer);
+  let hddAxisSvg = appendAxisYHdd(chart);
+ 
+  // Append the axes
+  let xAxisSvg = appendAxisX(chart);
 
-chartContainer.append("g")
-  .attr("class", "axis-label hdd-label")
-  .append("text")
-    .text("Heating Degree Days")
-    .attr("transform", `rotate(-90) translate(-${chartHeight/2 + margin.top + 60}, 20)`)
+  // Draw the data paths
+  let hddPath = appendHddPath(chart);
 
-chartContainer.append("g")
-  .attr("class", "axis-label cdd-label")
-  .append("text")
+  // Add a dotted line at 1980
+  let startYearLine = appendStartYearLine(chart);
+
+  let coverRect = appendCoverRect(chart, "cover");
+  let animatingRect = appendCoverRect(chart, "animate");
+
+  let legend = addLegendToChart(chart);
+  let hddLegend = legend.selectAll(".hdd-legend");
+  let cddLegend = legend.selectAll(".cdd-legend");
+
+  hideElements([cddLegend]);
+
+  // Re-order elements to hide one path behind covering rect
+  coverRect.raise()
+  hddPath.raise()
+  animatingRect.raise()
+  startYearLine.raise()
+
+  // Start the animation
+  let animateRectTransition = animateAnimatingRect(animatingRect, 2000);
+  let newAnimateRectTransition;
+
+  animateRectTransition.end().then(function(d, i) {
+
+    setTimeout(() => {
+
+      // Change the text of the chart note
+      chartNote.selectAll("text").text("Air conditioning use increased in recent years due to rising summer temperatures.")
+  
+      // Draw the other path
+      let cddPath = appendCddPath(chart);
+
+      coverRect.raise()
+      cddPath.raise()
+      startYearLine.raise()
+
+      animatingRect.remove()
+
+      // Add other axis
+      let cddAxisLabel = appendChartLabelCdd(chartContainer);
+      let cddAxisSvg = appendAxisYCdd(chart);
+
+      // Hide the existing axis
+      hideElements([hddAxisSvg, hddAxisLabel, hddPath, hddLegend]);
+      unhideElements([cddLegend]);
+
+      // Setup another animation rect
+      // (having issues trying to reset the original, so we just build another one)
+      let newAnimatingRect = appendCoverRect(chart, "animate");
+      newAnimateRectTransition = animateAnimatingRect(newAnimatingRect, 2000);
+
+      cddAxisSvg.raise()
+      // After the second path draws, wait a moment and then unhide the other path
+      newAnimateRectTransition.end().then(function(d, i) {
+        setTimeout(() => {
+          coverRect.lower()
+          unhideElements([hddLegend, hddAxisSvg, hddAxisLabel, hddPath])
+          chartNote.selectAll("text").text("")
+          hideElements([startYearLine])
+        }, 2000);
+      })
+    }, 2000);
+  })
+
+}
+
+let hideElements = list => {
+  list.forEach(e => e.classed("hidden", true));
+}
+
+let unhideElements = list => {
+  list.forEach(e => e.classed("hidden", false));
+}
+
+let resetAnimatingRect = rectContainer => {
+
+  let rect = rectContainer.selectAll("rect")
+
+  rect.attr("x", x(startAnimationYear))
+      .attr("width", chartWidth - x(startAnimationYear))
+
+  console.log(rect)
+
+}
+
+let appendChartNote = (chartContainer, text) => {
+
+  // Chart note
+  let chartTitle = chartContainer.append("g")
+    .attr("class", "chart-note")
+    .attr("transform", `translate(${margin.left*1.5}, ${margin.top/3})`)
+
+  chartTitle.append("text")
+    .text(text)
+
+  return chartTitle; 
+}
+
+let appendChartLabelHdd = chartContainer => {
+
+  let label = chartContainer.append("g")
+    .attr("class", "axis-label hdd-label")
+    .append("text")
+      .text("Heating Degree Days")
+      .attr("transform", `rotate(-90) translate(-${chartHeight/2 + margin.top + 60}, 20)`)
+
+  return label;
+
+}
+
+let appendChartLabelCdd = chartContainer => {
+
+  let label = chartContainer.append("g")
+    .attr("class", "axis-label cdd-label")
+
+  label.append("text")
     .text("Cooling Degree Days")
     .attr("transform", `rotate(90) translate(${chartHeight/2}, -${chartWidth + margin.right + 75} )`)
 
+  return label;
 
-let chart = chartContainer.append("g")
-  .attr("class", "chart")
-  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-
-// x axis - year
-chart.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + chartHeight + ")")
-    .call(xAxis)
-//    .selectAll("text")
-//      .attr("x", 20)
-//      .attr("y", -4)
-//      .attr("transform", "rotate(90)")
-
-// y axis - cooling degree days
-chart.append("g")
-    .attr("class", "y axis cdd")
-    .attr("transform", `translate(${chartWidth}, 0)`)
-    .call(yAxisCdd)
-
-// y axis - heating degree days
-chart.append("g")
-    .attr("class", "y axis hdd")
-    .call(yAxisHdd)
-
-let t = d3.transition()
-  .duration(6000)
-  .ease(d3.easeLinear)
-
-// cooling degree-days svg path
-let cdd_path = chart.append("path")
-    .attr("d", sum_cdd_line(data))
-    .attr("fill", "white")
-    .attr("stroke", cicsRed)
-    .attr("stroke-width", lineStrokeWidth)
+}
 
 
-// heating degree days svg path
-let hdd_path = chart.append("path")
-    .attr("d", sum_hdd_line(data))
-    .attr("fill", "white")
-    .attr("stroke", cicsBlue)
-    .attr("stroke-width", lineStrokeWidth)
+let appendChart = chartContainer => {
+
+  let chart = chartContainer.append("g")
+    .attr("class", "chart")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  return chart;
+
+}
+
+let appendAxisX = chart => {
+
+  let xAxisSvg = chart.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + chartHeight + ")")
+      .call(xAxis)
+
+  return xAxisSvg 
+}
+
+
+let appendAxisYCdd = chart => {
+
+  // y axis - cooling degree days
+  let yAxisCddSvg = chart.append("g")
+      .attr("class", "y axis cdd")
+      .attr("transform", `translate(${chartWidth}, 0)`)
+      .call(yAxisCdd)
+
+  return yAxisCddSvg;
+
+}
+
+let appendAxisYHdd = chart => {
+
+  // y axis - heating degree days
+  let yAxisHddSvg = chart.append("g")
+      .attr("class", "y axis hdd")
+      .call(yAxisHdd)
+
+  return yAxisHddSvg;
+
+}
+
+let appendCddPath = chart => {
+
+  // cooling degree-days svg path
+  let cddPath = chart.append("path")
+      .attr("d", sum_cdd_line(data))
+      .attr("fill", "white")
+      .attr("stroke", cicsRed)
+      .attr("stroke-width", lineStrokeWidth)
+
+  return cddPath;
+
+}
+
+let appendHddPath = chart => {
+
+  // heating degree days svg path
+  let hddPath = chart.append("path")
+      .attr("d", sum_hdd_line(data))
+      .attr("fill", "white")
+      .attr("stroke", cicsBlue)
+      .attr("stroke-width", lineStrokeWidth)
+
+  return hddPath;
+
+}
+
+
+let appendStartYearLine = chart => {
+
+  let startYearLine = chart.append("g")
+    .attr("class", "start-year-line")
+
+  startYearLine.append("text")
+    .attr("class", "start-year-line-label")
+    .attr("x", x(startAnimationYear))
+    .attr("y", "-5")
+    .attr("fill", "gray")
+    .attr("text-anchor", "middle")
+    .text(startAnimationYear)
+  
+  startYearLine.append("line")
+    .attr("x1", x(startAnimationYear))
+    .attr("x2", x(startAnimationYear))
+    .attr("y1", "0")
+    .attr("y2", chartHeight)
+    .attr("stroke", "gray")
+    .attr("stroke-width", ".5")
+    .attr("stroke-dasharray", "5")
+
+  return startYearLine; 
+
+}
 
 
 // Hack for animating the data lines.
 // An invisible rectangle initially covers the graph,
 // then gradually reduces its width to 0 in such a way
 // that the graph collapses from the left to the right.
-let rect = chart.append("g")
-    .append("rect")
+
+let appendCoverRect = (chart, className) => {
+
+  let rect = chart.append("g")
+
+  rect.append("rect")
+    .attr("class", className)
     .attr("fill", "white")
     .attr("height", chartHeight)
-    .attr("width", chartWidth)
-    .attr("x", 0)
-    .transition(t)
+    .attr("width", chartWidth - x(startAnimationYear) + 10)
+    .attr("x", x(startAnimationYear))
+  
+  return rect;
+
+}
+
+let animateAnimatingRect = (rect, duration, delay=0) => {
+
+  let t = d3.transition()
+    .ease(d3.easeLinear)
+    .duration(duration)
+    .delay(delay)
+
+  rect.selectAll("rect").transition(t)
       .attr("width", 0)
       .attr("x", chartWidth)
 
+  return t;
+
+}
+
+
+
 // Legend bits come last so they draw over the "animation" rect
-let legend = chart.append("g")
-  .attr("class", "legend wrapper")
-  .attr("transform", `translate(${margin.left - 20}, ${chartHeight - 120})`) 
-let legendLineLength = "50"
-let legendLabelBufferLength = "10"
 
-let legendHeating = legend.append("g")
-  .attr("class", "legend row")
+let addLegendToChart = chart => {
 
-legendHeating.append("line")
-  .attr("x1", "0")
-  .attr("x2", legendLineLength)
-  .attr("y1", "-9")
-  .attr("y2", "-9")
-  .attr("stroke", cicsBlue)
-  .attr("stroke-width", lineStrokeWidth)
+  let legendLineLength = "50"
+  let legendLabelBufferLength = "10"
 
-legendHeating.append("text")
-  .text("Heating")
-  .attr("class", "legend label")
-  .attr("x", `${parseInt(legendLineLength) + parseInt(legendLabelBufferLength)}`)
+  let legend = chart.append("g")
+    .attr("class", "legend wrapper")
+    .attr("transform", `translate(${margin.left - 20}, ${chartHeight - 120})`) 
 
-let legendCooling = legend.append("g")
-  .attr("class", "legend element")
-  .attr("transform", "translate(0, 38)")
+  let legendHeating = legend.append("g")
+    .attr("class", "legend row hdd-legend")
 
-legendCooling.append("text")
-  .text("Cooling")
-  .attr("class", "legend label")
-  .attr("x", `${parseInt(legendLineLength) + parseInt(legendLabelBufferLength)}`)
+  legendHeating.append("line")
+    .attr("x1", "0")
+    .attr("x2", legendLineLength)
+    .attr("y1", "-9")
+    .attr("y2", "-9")
+    .attr("stroke", cicsBlue)
+    .attr("stroke-width", lineStrokeWidth)
 
-legendCooling.append("line")
-  .attr("x1", "0")
-  .attr("x2", legendLineLength)
-  .attr("y1", "-9")
-  .attr("y2", "-9")
-  .attr("stroke", cicsRed)
-  .attr("stroke-width", lineStrokeWidth)
+  legendHeating.append("text")
+    .text("Heating Degree Days")
+    .attr("class", "legend label")
+    .attr("x", `${parseInt(legendLineLength) + parseInt(legendLabelBufferLength)}`)
+
+  let legendCooling = legend.append("g")
+    .attr("class", "legend row cdd-legend")
+    .attr("transform", "translate(0, 38)")
+
+  legendCooling.append("text")
+    .text("Cooling Degree Days")
+    .attr("class", "legend label")
+    .attr("x", `${parseInt(legendLineLength) + parseInt(legendLabelBufferLength)}`)
+
+  legendCooling.append("line")
+    .attr("x1", "0")
+    .attr("x2", legendLineLength)
+    .attr("y1", "-9")
+    .attr("y2", "-9")
+    .attr("stroke", cicsRed)
+    .attr("stroke-width", lineStrokeWidth)
+
+  return legend;
+
+}
 
 
 /*
@@ -223,3 +411,4 @@ chart.append("g")
 
 
 
+main();
