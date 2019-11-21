@@ -51,9 +51,11 @@ let xAxis = d3.axisBottom(x)
     .tickPadding(5)
     .tickValues([1895, 1905, 1915, 1925, 1935, 1945, 1955, 1965, 1975, 1985, 1995, 2005, 2015])
 
-let yAxisCdd = d3.axisRight(y_cdd).ticks(8)
+let yAxisCdd = d3.axisLeft(y_cdd).ticks(8)
 
 let yAxisHdd = d3.axisLeft(y_hdd).ticks(5)
+
+let emptyYAxisRight = d3.axisLeft(y_cdd).ticks(0)
 
 let chartContainer = d3.selectAll(".chart-container")
     .attr("width", chartWidth + margin.left + margin.right)
@@ -61,11 +63,15 @@ let chartContainer = d3.selectAll(".chart-container")
 
 
 let main = () => {
-  let chartNote = appendChartNote(chartContainer, "Warmer winters led to a reduction in heating demand since 1980.")
+
   let chart = appendChart(chartContainer);
+
+  let chartNote = appendChartNote(chartContainer, "Warmer winters led to a reduction in heating demand since 1980.")
 
   let hddAxisLabel = appendChartLabelHdd(chartContainer);
   let hddAxisSvg = appendAxisYHdd(chart);
+
+  let emptyAxisYSvg = appendAxisYEmptyRight(chart);
  
   // Append the axes
   let xAxisSvg = appendAxisX(chart);
@@ -90,6 +96,7 @@ let main = () => {
   hddPath.raise()
   animatingRect.raise()
   startYearLine.raise()
+  emptyAxisYSvg.raise()
 
   // Start the animation
   let animateRectTransition = animateAnimatingRect(animatingRect, 2000);
@@ -111,6 +118,9 @@ let main = () => {
 
       animatingRect.remove()
 
+      hddAxisLabel.remove()
+      hddAxisSvg.remove()
+
       // Add other axis
       let cddAxisLabel = appendChartLabelCdd(chartContainer);
       let cddAxisSvg = appendAxisYCdd(chart);
@@ -122,10 +132,12 @@ let main = () => {
       // Setup another animation rect
       // (having issues trying to reset the original, so we just build another one)
       let newAnimatingRect = appendCoverRect(chart, "animate");
+      emptyAxisYSvg.raise()
       newAnimateRectTransition = animateAnimatingRect(newAnimatingRect, 2000);
 
       cddAxisSvg.raise()
-      // After the second path draws, wait a moment and then unhide the other path
+
+      /*
       newAnimateRectTransition.end().then(function(d, i) {
         setTimeout(() => {
           coverRect.lower()
@@ -134,6 +146,7 @@ let main = () => {
           hideElements([startYearLine])
         }, 2000);
       })
+      */
     }, 2000);
   })
 
@@ -190,7 +203,8 @@ let appendChartLabelCdd = chartContainer => {
 
   label.append("text")
     .text("Cooling Degree Days")
-    .attr("transform", `rotate(90) translate(${chartHeight/2}, -${chartWidth + margin.right + 75} )`)
+    .attr("transform", `rotate(-90) translate(-${chartHeight/2 + margin.top + 60}, 20)`)
+    //.attr("transform", `rotate(90) translate(${chartHeight/2}, -${chartWidth + margin.right + 75} )`)
 
   return label;
 
@@ -218,12 +232,26 @@ let appendAxisX = chart => {
 }
 
 
+let appendAxisYEmptyRight = chart => {
+
+  // y axis - cooling degree days
+  let yAxisCddSvg = chart.append("g")
+      .attr("class", "y axis empty")
+      .attr("transform", `translate(${chartWidth}, 0)`)
+      .call(emptyYAxisRight)
+
+  return yAxisCddSvg;
+
+}
+
+
+
 let appendAxisYCdd = chart => {
 
   // y axis - cooling degree days
   let yAxisCddSvg = chart.append("g")
       .attr("class", "y axis cdd")
-      .attr("transform", `translate(${chartWidth}, 0)`)
+      //.attr("transform", `translate(${chartWidth}, 0)`)
       .call(yAxisCdd)
 
   return yAxisCddSvg;
@@ -361,7 +389,7 @@ let addLegendToChart = chart => {
 
   let legendCooling = legend.append("g")
     .attr("class", "legend row cdd-legend")
-    .attr("transform", "translate(0, 38)")
+    //.attr("transform", "translate(0, 38)")
 
   legendCooling.append("text")
     .text("Cooling Degree Days")
