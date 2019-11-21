@@ -61,8 +61,10 @@ let chartContainer = d3.selectAll(".chart-container")
 
 
 let main = () => {
-  let chartNote = appendChartNote(chartContainer, "Warmer winters led to a reduction in heating demand since 1980.")
   let chart = appendChart(chartContainer);
+
+  let chartNote = appendChartNote(chart, "Warmer winters led to a reduction in heating demand since 1980.")
+  chartNote.attr("transform", `translate(${margin.left}, ${margin.top*1.5})`)
 
   let hddAxisLabel = appendChartLabelHdd(chartContainer);
   let hddAxisSvg = appendAxisYHdd(chart);
@@ -102,9 +104,18 @@ let main = () => {
 
     setTimeout(() => {
 
-      // Change the text of the chart note
-      chartNote.selectAll("text").text("Air conditioning use increased in recent years due to rising summer temperatures.")
-  
+      // Change the text and position of the chart note
+      chartNote.attr("transform", `translate(${margin.left}, ${margin.top*3})`)
+      chartNote.selectAll("text").text("")
+      chartNote.selectAll("text")
+        .append("tspan")
+          .text("Air conditioning use increased in recent years")
+      chartNote.selectAll("text")
+        .append("tspan")
+          .text("due to rising summer temperatures.")
+          .attr("y", "30")
+          .attr("x", "15")
+
       // Draw the other path
       let cddPath = appendCddPath(chart);
 
