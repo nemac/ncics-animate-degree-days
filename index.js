@@ -66,7 +66,8 @@ let main = () => {
 
   let chart = appendChart(chartContainer);
 
-  let chartNote = appendChartNote(chartContainer, "Warmer winters led to a reduction in heating demand since 1980.")
+  let chartNote = appendChartNote(chart, "Warmer winters led to a reduction in heating demand since 1980.")
+  chartNote.attr("transform", `translate(${margin.left}, ${margin.top*1.5})`)
 
   let hddAxisLabel = appendChartLabelHdd(chartContainer);
   let hddAxisSvg = appendAxisYHdd(chart);
@@ -106,8 +107,18 @@ let main = () => {
 
     setTimeout(() => {
 
-      // Change the text of the chart note
-      chartNote.selectAll("text").text("Air conditioning use increased in recent years due to rising summer temperatures.")
+      // Change the text and position of the chart note
+      chartNote.attr("transform", `translate(${margin.left}, ${margin.top*3})`)
+      chartNote.selectAll("text").text("")
+      chartNote.selectAll("text")
+        .append("tspan")
+          .text("Air conditioning use increased in recent years")
+      chartNote.selectAll("text")
+        .append("tspan")
+          .text("due to rising summer temperatures.")
+          .attr("y", "30")
+          .attr("x", "15")
+      
   
       // Draw the other path
       let cddPath = appendCddPath(chart);
@@ -147,7 +158,7 @@ let main = () => {
         }, 2000);
       })
       */
-    }, 2000);
+    }, 3500);
   })
 
 }
@@ -171,17 +182,15 @@ let resetAnimatingRect = rectContainer => {
 
 }
 
-let appendChartNote = (chartContainer, text) => {
+let appendChartNote = (chart, text) => {
 
-  // Chart note
-  let chartTitle = chartContainer.append("g")
+  let chartNote = chart.append("g")
     .attr("class", "chart-note")
-    .attr("transform", `translate(${margin.left*1.5}, ${margin.top/3})`)
 
-  chartTitle.append("text")
+  chartNote.append("text")
     .text(text)
 
-  return chartTitle; 
+  return chartNote; 
 }
 
 let appendChartLabelHdd = chartContainer => {
