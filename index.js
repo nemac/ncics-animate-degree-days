@@ -178,7 +178,6 @@ let main = () => {
           // Reset the axis ticks
           cddAxisSvg.call(yAxisCdd.ticks(8))
           hddAxisSvg.call(yAxisHdd.ticks(5))
-          //hideElements([startYearLine])
           let otherChartNote = appendChartNote(chart,
             "The two y axes show different scales"
           )
