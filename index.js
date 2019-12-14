@@ -179,7 +179,6 @@ let main = () => {
           cddAxisSvg.call(yAxisCdd.ticks(8))
           hddAxisSvg.call(yAxisHdd.ticks(5))
           //hideElements([startYearLine])
-          /* Remove the note about two y axes for 3.3.2
           let otherChartNote = appendChartNote(chart,
             "The two y axes show different scales"
           )
@@ -187,7 +186,6 @@ let main = () => {
           otherChartNote.attr("transform",
             `translate(80, 625)`
           )
-          */
           setTimeout(() => {
             hideElements([ d3.selectAll("svg") ]) 
           }, 5000) //3000
