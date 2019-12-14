@@ -62,8 +62,16 @@ let chartContainer = d3.selectAll(".chart-container")
 let main = () => {
   let chart = appendChart(chartContainer);
 
-  let chartNote = appendChartNote(chart, "Warmer winters led to a reduction in heating demand since 1980.")
-  chartNote.attr("transform", `translate(${margin.left}, ${margin.top*1.5})`)
+  let logo = chart.append("g")
+
+  logo.append("image")
+    .attr("href", "USGCRP-blueText_transparentBG.png")
+    .attr("x", x(1988))
+    .attr("y", String(chartHeight - 100))
+    .attr("width", "200")
+    .attr("height", "80")
+
+  logo.raise()
 
   let hddAxisLabel = appendChartLabelHdd(chartContainer);
   let hddAxisSvg = appendAxisYHdd(chart);
@@ -91,29 +99,36 @@ let main = () => {
   hddPath.raise()
   animatingRect.raise()
   startYearLine.raise()
+  logo.raise()
 
-  // Start the animation
+  // Start the animation (HDD line animating from 1980 to end of graph)
   let animateRectTransition = animateAnimatingRect(animatingRect, 2000);
   let newAnimateRectTransition;
 
+  // "Hide" the CDD axis by setting number of ticks to 0. This keeps the axis line in place
   let cddAxisSvg = appendAxisYCdd(chart);
   cddAxisSvg.call(yAxisCdd.ticks(0));
 
   animateRectTransition.end().then(function(d, i) {
+    // HDD line animation has ended. 
+    // Show the flavor text for HDD and then
+    // wait a couple seconds before starting the next animation
+    let chartNote = appendChartNote(chart, "", [ "chart-note" ])
+    chartNote.attr("transform", `translate(${margin.left}, ${margin.top*1.5})`)
+    //chartNote.attr("transform", `translate(${margin.left}, ${margin.top*3})`)
+    chartNote.selectAll("text")
+      .append("tspan")
+        .text("Warmer winters led to a reduction")
+    chartNote.selectAll("text")
+      .append("tspan")
+        .text("in heating demand since 1980.")
+        .attr("y", "30")
+        .attr("x", "15")
 
     setTimeout(() => {
 
-      // Change the text and position of the chart note
-      chartNote.attr("transform", `translate(${margin.left}, ${margin.top*3})`)
+      // Hide the chart note for now
       chartNote.selectAll("text").text("")
-      chartNote.selectAll("text")
-        .append("tspan")
-          .text("Air conditioning use increased in recent years")
-      chartNote.selectAll("text")
-        .append("tspan")
-          .text("due to rising summer temperatures.")
-          .attr("y", "30")
-          .attr("x", "15")
 
       // Draw the other path
       let cddPath = appendCddPath(chart);
@@ -121,9 +136,10 @@ let main = () => {
       coverRect.raise()
       cddPath.raise()
       startYearLine.raise()
+      logo.raise()
 
       animatingRect.remove()
-      
+
       cddAxisSvg.call(yAxisCdd.ticks(8));
 
       // Add other axis
@@ -140,8 +156,21 @@ let main = () => {
       newAnimateRectTransition = animateAnimatingRect(newAnimatingRect, 2000);
 
       cddAxisSvg.raise()
-      // After the second path draws, wait a moment and then unhide the other path
+      logo.raise()
       newAnimateRectTransition.end().then(function(d, i) {
+        // After the second path draws, wait a moment and then unhide the other path
+        // Change the text and position of the chart note
+        chartNote.attr("transform", `translate(${margin.left}, ${margin.top*3})`)
+        chartNote.selectAll("text").text("")
+        chartNote.selectAll("text")
+          .append("tspan")
+            .text("Air conditioning use increased in recent years")
+        chartNote.selectAll("text")
+          .append("tspan")
+            .text("due to rising summer temperatures.")
+            .attr("y", "30")
+            .attr("x", "15")
+
         setTimeout(() => {
           coverRect.lower()
           unhideElements([hddLegend, hddAxisSvg, hddAxisLabel, hddPath])
@@ -150,9 +179,19 @@ let main = () => {
           cddAxisSvg.call(yAxisCdd.ticks(8))
           hddAxisSvg.call(yAxisHdd.ticks(5))
           //hideElements([startYearLine])
-        }, 2000);
+          let otherChartNote = appendChartNote(chart,
+            "The two y axes show different scales"
+          )
+          otherChartNote.attr("id", "two-scales-chart-note")
+          otherChartNote.attr("transform",
+            `translate(80, 625)`
+          )
+          setTimeout(() => {
+            hideElements([ d3.selectAll("svg") ]) 
+          }, 5000) //3000
+        }, 5000); //5000
       })
-    }, 2000);
+    }, 5000); //5000
   })
 
 }
@@ -171,16 +210,13 @@ let resetAnimatingRect = rectContainer => {
 
   rect.attr("x", x(startAnimationYear))
       .attr("width", chartWidth - x(startAnimationYear))
-
-  console.log(rect)
-
 }
 
-let appendChartNote = (chartContainer, text) => {
+let appendChartNote = (chartContainer, text, classes=[]) => {
 
   // Chart note
   let chartTitle = chartContainer.append("g")
-    .attr("class", "chart-note")
+    .attr("class", classes.join(" "))
     .attr("transform", `translate(${margin.left*1.5}, ${margin.top/3})`)
 
   chartTitle.append("text")
@@ -348,10 +384,7 @@ let animateAnimatingRect = (rect, duration, delay=0) => {
 
 }
 
-
-
 // Legend bits come last so they draw over the "animation" rect
-
 let addLegendToChart = chart => {
 
   let legendLineLength = "50"
@@ -397,7 +430,6 @@ let addLegendToChart = chart => {
   return legend;
 
 }
-
 
 /*
 // cooling degree days points
