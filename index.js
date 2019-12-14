@@ -179,7 +179,7 @@ let main = () => {
           cddAxisSvg.call(yAxisCdd.ticks(8))
           hddAxisSvg.call(yAxisHdd.ticks(5))
           //hideElements([startYearLine])
-          /* Remove the note about two y axes for 3.3.2
+          /* Remove the note about two y axes for v5.1
           let otherChartNote = appendChartNote(chart,
             "The two y axes show different scales"
           )
